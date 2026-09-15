@@ -1,0 +1,37 @@
+---
+description: PayFlow engineering rules
+alwaysApply: true
+---
+
+# PayFlow
+
+PayFlow is a multi-tenant invoicing SaaS for Indian freelancers and agencies. Payments are collected through an established gateway. PayFlow is not a payment processor.
+
+## Build in slices
+
+Do not generate the entire product in one shot. Inspect relevant files before changing code. Prefer small patches. Reuse existing components and validation.
+
+Current intended sequence: architecture → auth → business/tenant → customers → invoices → PDF → payment abstraction → sandbox checkout → signed webhooks + idempotency → public pay page → dashboard aggregates → email → subscription skeleton → admin → tests → staging.
+
+## Non-negotiables
+
+- Never hardcode secrets or commit `.env`.
+- Never disable TypeScript or lint errors to make builds pass.
+- Never trust the browser to declare a payment successful.
+- Never mark an invoice `PAID` from a client callback.
+- Never trust `businessId`, `userId`, `customerId`, or `invoiceId` from the client without ownership checks.
+- Invoice totals are calculated and validated on the server. Client-submitted totals are not authoritative.
+- Webhook handlers must verify signatures and be idempotent.
+- Tenant-scoped queries must always filter by the authenticated business.
+- Three.js belongs only on marketing pages, never the dashboard.
+- Do not add libraries without a clear reason.
+- Do not implement WhatsApp, recurring automation, mobile apps, or a public API in MVP unless explicitly requested.
+
+## Testing
+
+- API suite runs with `npm test -w apps/api`. Node must be >= 20.17: older Node 20.x (e.g. 20.5) never fires top-level `after()` teardown when a test keeps the event loop alive (listening server, sockets, mongod), so the suite hangs. Use `nvm use` (`.nvmrc` pins 20.17.0). CI runs node 20.
+- Integration tests (`security-isolation.test.ts`) spawn their own mongod on a random port; teardown force-closes the server, disconnects the DB, and kills mongod. Never skip or speed up this teardown.
+
+## UI
+
+Keep the product UI clean and minimal: warm paper background, ink text, generous spacing, serif headlines, status as text plus a calm badge. Show loading, empty, success, and error states. Financial amounts use INR with two-decimal precision where appropriate.

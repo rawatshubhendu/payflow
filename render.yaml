@@ -1,0 +1,53 @@
+# Render blueprint (blueprint.render.com / deploy via GitHub -> Render)
+# Root monorepo; both services share the same repo. Set secrets via the Render dashboard.
+#
+# Required env vars (set in Render dashboard - never commit secrets):
+#   MONGODB_URI, SESSION_SECRET, ENCRYPTION_KEY, EMAIL_PROVIDER_API_KEY
+#   RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, RAZORPAY_WEBHOOK_SECRET
+#   ADMIN_EMAILS, SUBSCRIPTION_SANDBOX
+
+services:
+  - type: web
+    name: payflow-api
+    runtime: node
+    rootDir: .
+    buildCommand: npm ci && npm run build -w apps/api
+    startCommand: npm run start -w apps/api
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: WEB_ORIGIN
+        fromService:
+          name: payflow-web
+          type: web
+          property: url
+      - key: API_ORIGIN
+        fromService:
+          name: payflow-api
+          type: web
+          property: url
+      - key: PUBLIC_API_ORIGIN
+        fromService:
+          name: payflow-api
+          type: web
+          property: url
+
+  - type: web
+    name: payflow-web
+    runtime: node
+    rootDir: .
+    buildCommand: npm ci && npm run build -w apps/web
+    startCommand: npm run start -w apps/web
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_API_ORIGIN
+        fromService:
+          name: payflow-api
+          type: web
+          property: url
