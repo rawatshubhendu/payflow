@@ -3,6 +3,7 @@ import { updateBusinessSchema } from '@payflow/validation';
 import type { ApiResponse, BusinessSummary } from '@payflow/types';
 import { Business } from '../models/Business.js';
 import { formatBusiness } from '../lib/serializers.js';
+import { assertPaidPlan } from '../lib/subscription.js';
 import { requireAuth } from '../middleware/auth.js';
 
 export const businessRouter = Router();
@@ -34,6 +35,10 @@ businessRouter.patch('/api/business', requireAuth, async (req: Request, res: Res
       meta: null,
     });
     return;
+  }
+
+  if (parsed.data.logoUrl !== undefined) {
+    await assertPaidPlan(req.business!._id, 'Custom branding');
   }
 
   const updated = await Business.findByIdAndUpdate(req.business!._id, { $set: parsed.data }, { new: true });

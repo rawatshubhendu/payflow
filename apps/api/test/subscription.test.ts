@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { PLAN_CATALOG } from '@payflow/types';
-import { planLimit } from '../src/lib/subscription.js';
+import { planFeatures, planLimit } from '../src/lib/subscription.js';
 
 test('plan limits match the published catalog', () => {
   assert.equal(planLimit('FREE'), PLAN_CATALOG.FREE.invoiceLimitPerMonth);
@@ -22,4 +22,20 @@ test('paid plans cost per the catalog', () => {
 test('plan orders expose a narrower free tier than pro', () => {
   assert.ok(planLimit('PRO') > planLimit('FREE'));
   assert.ok(planLimit('BUSINESS') > planLimit('PRO'));
+});
+
+test('free plan locks analytics charts, branding and reminders', () => {
+  const features = planFeatures('FREE');
+  assert.equal(features.analyticsCharts, false);
+  assert.equal(features.customBranding, false);
+  assert.equal(features.paymentReminders, false);
+});
+
+test('pro and business plans unlock all paid features', () => {
+  const pro = planFeatures('PRO');
+  const business = planFeatures('BUSINESS');
+  assert.equal(pro.analyticsCharts, true);
+  assert.equal(pro.customBranding, true);
+  assert.equal(pro.paymentReminders, true);
+  assert.deepEqual(business, pro);
 });

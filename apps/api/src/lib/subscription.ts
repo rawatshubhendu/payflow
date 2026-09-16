@@ -19,7 +19,10 @@ export function planLimit(plan: SubscriptionPlan): number {
   return PLAN_CATALOG[plan].invoiceLimitPerMonth;
 }
 
-export async function getOrCreateSubscription(businessId: Types.ObjectId, plan: SubscriptionPlan = DEFAULT_PLAN) {
+export async function getOrCreateSubscription(
+  businessId: Types.ObjectId,
+  plan: SubscriptionPlan = DEFAULT_PLAN,
+) {
   let subscription = await Subscription.findOne({ businessId });
 
   const { periodStart, periodEnd } = currentPeriod();
@@ -44,12 +47,24 @@ export async function getOrCreateSubscription(businessId: Types.ObjectId, plan: 
   return subscription;
 }
 
-export async function countInvoicesUsed(businessId: Types.ObjectId, periodStart: Date): Promise<number> {
+export async function countInvoicesUsed(
+  businessId: Types.ObjectId,
+  periodStart: Date,
+): Promise<number> {
   return Invoice.countDocuments({
     businessId,
     status: { $ne: 'CANCELLED' },
     createdAt: { $gte: periodStart },
   });
+}
+
+export function planFeatures(plan: SubscriptionPlan): SubscriptionInfo['features'] {
+  const paid = plan !== 'FREE';
+  return {
+    analyticsCharts: paid,
+    customBranding: paid,
+    paymentReminders: paid,
+  };
 }
 
 export async function buildSubscriptionInfo(
@@ -68,6 +83,7 @@ export async function buildSubscriptionInfo(
     periodEnd: sub.periodEnd ? sub.periodEnd.toISOString() : null,
     nextResetAt: sub.periodEnd ? sub.periodEnd.toISOString() : periodEndOf(periodStart),
     sandbox: true,
+    features: planFeatures(sub.plan),
     limits: {
       invoiceLimit,
       invoicesUsed,
@@ -82,7 +98,20 @@ function periodEndOf(periodStart: Date): string {
   return end.toISOString();
 }
 
-export async function assertInvoiceLimit(businessId: Types.ObjectId): Promise<{ used: number; limit: number }> {
+export async function assertPaidPlan(businessId: Types.ObjectId, feature: string): Promise<void> {
+  const subscription = await getOrCreateSubscription(businessId);
+  if (subscription.plan === 'FREE') {
+    throw new AppError(
+      403,
+      'PLAN_UPGRADE_REQUIRED',
+      `${feature} is a paid feature. Upgrade to ${PLAN_CATALOG.PRO.name} to unlock it.`,
+    );
+  }
+}
+
+export async function assertInvoiceLimit(
+  businessId: Types.ObjectId,
+): Promise<{ used: number; limit: number }> {
   const info = await buildSubscriptionInfo(businessId);
   if (info.limits.invoicesUsed >= info.limits.invoiceLimit) {
     throw new AppError(
@@ -102,7 +131,10 @@ export async function selectPlan(input: {
   const subscription = await getOrCreateSubscription(input.businessId);
 
   if (subscription.plan === input.plan) {
-    return { ...(await buildSubscriptionInfo(input.businessId, subscription)), note: `You are already on the ${input.plan} plan.` };
+    return {
+      ...(await buildSubscriptionInfo(input.businessId, subscription)),
+      note: `You are already on the ${input.plan} plan.`,
+    };
   }
 
   const previousPlan = subscription.plan;
@@ -119,8 +151,15 @@ export async function selectPlan(input: {
     metadata: { from: previousPlan, to: input.plan },
   });
 
+  const note =
+    input.plan === 'FREE'
+      ? `Plan changed to ${input.plan}. Revenue charts and custom branding are now locked. Sandbox mode — no real charge.`
+      : input.plan === 'PRO'
+        ? `Plan changed to ${input.plan}. ${PLAN_CATALOG.PRO.invoiceLimitPerMonth} invoices a month, revenue charts and custom branding unlocked. Sandbox mode — no real charge.`
+        : `Plan changed to ${input.plan}. ${PLAN_CATALOG.BUSINESS.invoiceLimitPerMonth} invoices a month, everything in Pro plus priority support. Sandbox mode — no real charge.`;
+
   return {
     ...(await buildSubscriptionInfo(input.businessId, subscription)),
-    note: `Plan changed to ${input.plan}. Sandbox mode — no real charge.`,
+    note,
   };
 }

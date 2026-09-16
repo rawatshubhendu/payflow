@@ -1,8 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { AppShell } from '@/components/app/app-shell';
+import { ProFeatureCard } from '@/components/app/pro-feature-card';
+import { RevenueChart, PaymentStatusDonut } from '@/components/app/analytics-charts';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { KpiCard } from '@/components/ui/kpi-card';
@@ -10,8 +12,14 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { PaymentNotificationBanner } from '@/components/app/payment-notification';
 import { api, ApiError } from '@/lib/api-client';
 import { formatInrExact } from '@/lib/money';
+import { freeFallbackSubscription } from '@/lib/plans';
 import { useAuth } from '@/lib/auth-context';
-import type { AnalyticsOverview } from '@payflow/types';
+import type {
+  AnalyticsOverview,
+  PaymentStatusOverview,
+  RevenueOverview,
+  SubscriptionInfo,
+} from '@payflow/types';
 
 export default function DashboardPage() {
   const { business } = useAuth();
@@ -19,6 +27,10 @@ export default function DashboardPage() {
   const title = firstName ? `Good morning, ${firstName}` : 'Good morning';
 
   const [overview, setOverview] = useState<AnalyticsOverview | null>(null);
+  const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
+  const [revenue, setRevenue] = useState<RevenueOverview | null>(null);
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatusOverview | null>(null);
+  const [range, setRange] = useState<7 | 30 | 90>(30);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,7 +40,37 @@ export default function DashboardPage() {
       .then(setOverview)
       .catch((err) => setError(err instanceof ApiError ? err.message : 'Failed to load dashboard.'))
       .finally(() => setLoading(false));
+    api
+      .get<SubscriptionInfo>('/api/subscription')
+      .then(setSubscription)
+      .catch((err) => {
+        setError(err instanceof ApiError ? err.message : 'Failed to load dashboard.');
+        setSubscription(freeFallbackSubscription());
+      });
   }, []);
+
+  const canCharts = subscription?.features.analyticsCharts ?? false;
+
+  const onRangeChange = useCallback((next: 7 | 30 | 90) => {
+    setRange(next);
+    api
+      .get<RevenueOverview>(`/api/analytics/revenue?days=${next}`)
+      .then(setRevenue)
+      .catch(() => undefined);
+  }, []);
+
+  useEffect(() => {
+    if (!canCharts) return;
+    Promise.all([
+      api.get<RevenueOverview>('/api/analytics/revenue?days=30'),
+      api.get<PaymentStatusOverview>('/api/analytics/payment-status'),
+    ])
+      .then(([revenueRes, statusRes]) => {
+        setRevenue(revenueRes);
+        setPaymentStatus(statusRes);
+      })
+      .catch((err) => setError(err instanceof ApiError ? err.message : 'Failed to load analytics.'));
+  }, [canCharts]);
 
   const kpis = overview?.kpis;
   const counts = overview?.counts;
@@ -45,7 +87,7 @@ export default function DashboardPage() {
 
       <PaymentNotificationBanner />
 
-      {loading || !overview ? (
+      {loading || !overview || !subscription ? (
         <div className="rounded-2xl border border-dashed border-line bg-elevated px-6 py-16 text-center text-sm text-muted">
           Loading dashboard...
         </div>
@@ -80,19 +122,23 @@ export default function DashboardPage() {
           </div>
 
           <div className="mt-6 grid gap-4 lg:grid-cols-2">
-            <div className="min-h-56 rounded-2xl border border-line bg-elevated p-5">
-              <p className="text-sm text-muted">Revenue</p>
-              <p className="mt-8 text-sm text-muted">
-                {formatInrExact(kpis!.collected)} collected across {counts!.collected} paid invoice
-                {counts!.collected === 1 ? '' : 's'}. Charts arrive once payments exist.
-              </p>
-            </div>
-            <div className="min-h-56 rounded-2xl border border-line bg-elevated p-5">
-              <p className="text-sm text-muted">Collected vs outstanding</p>
-              <p className="mt-8 text-sm text-muted">
-                {formatInrExact(kpis!.collected)} collected · {formatInrExact(kpis!.pending + kpis!.overdue)} outstanding.
-              </p>
-            </div>
+            {canCharts && revenue && paymentStatus ? (
+              <>
+                <RevenueChart series={revenue.series} range={range} onRangeChange={onRangeChange} />
+                <PaymentStatusDonut data={paymentStatus} />
+              </>
+            ) : (
+              <>
+                <ProFeatureCard
+                  title="Revenue charts"
+                  description="See revenue trends, collection rate and payment status at a glance."
+                />
+                <ProFeatureCard
+                  title="Payment status"
+                  description="Track how much is collected, pending and overdue across your invoices."
+                />
+              </>
+            )}
           </div>
 
           <div className="mt-6 grid gap-6 lg:grid-cols-2">

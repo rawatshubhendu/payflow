@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth, ApiError } from '@/lib/auth-context';
 import { api } from '@/lib/api-client';
-import type { BusinessSummary } from '@payflow/types';
+import { freeFallbackSubscription } from '@/lib/plans';
+import type { BusinessSummary, SubscriptionInfo } from '@payflow/types';
 
 type Feedback = { type: 'success' | 'error'; text: string } | null;
 
@@ -17,10 +18,35 @@ export function BrandingSettings() {
   const [logoUrl, setLogoUrl] = useState('');
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>(null);
+  const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
+
+  useEffect(() => {
+    api
+      .get<SubscriptionInfo>('/api/subscription')
+      .then(setSubscription)
+      .catch(() => setSubscription(freeFallbackSubscription()));
+  }, []);
 
   useEffect(() => {
     if (business) setLogoUrl(business.logoUrl ?? '');
   }, [business]);
+
+  if (subscription && !subscription.features.customBranding) {
+    return (
+      <div className="flex min-h-56 flex-col items-start justify-center rounded-2xl border border-line bg-elevated p-6">
+        <span className="rounded-full bg-accent/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-accent">
+          Pro feature
+        </span>
+        <h2 className="mt-3 font-serif text-xl tracking-tight">Custom branding</h2>
+        <p className="mt-2 max-w-md text-sm text-muted">
+          Put your logo on invoice payment pages. Custom branding is included with the Pro plan.
+        </p>
+        <Button href="/app/billing" className="mt-5">
+          Upgrade to Pro
+        </Button>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

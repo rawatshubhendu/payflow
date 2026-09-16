@@ -72,6 +72,13 @@ export async function logout(page: Page): Promise<void> {
   await expect(page).toHaveURL(/\/$/, { timeout: 20_000 });
 }
 
+export async function selectPlan(page: Page, plan: 'FREE' | 'PRO' | 'BUSINESS'): Promise<void> {
+  const response = await page.request.post(`${API_ORIGIN}/api/subscription/select`, {
+    data: { plan },
+  });
+  expect(response.ok()).toBeTruthy();
+}
+
 export async function addCustomer(
   page: Page,
   customer: { name: string; email?: string; phone?: string; company?: string },

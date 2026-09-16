@@ -25,6 +25,11 @@ export type SubscriptionInfo = {
   periodEnd: string | null;
   nextResetAt: string;
   sandbox: boolean;
+  features: {
+    analyticsCharts: boolean;
+    customBranding: boolean;
+    paymentReminders: boolean;
+  };
   limits: {
     invoiceLimit: number;
     invoicesUsed: number;

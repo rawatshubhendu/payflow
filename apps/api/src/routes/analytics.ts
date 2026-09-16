@@ -11,6 +11,7 @@ import { Customer } from '../models/Customer.js';
 import { Payment } from '../models/Payment.js';
 import { loadInvoiceSummaries } from '../lib/invoice-summaries.js';
 import { effectiveStatus } from '../lib/invoice-status.js';
+import { assertPaidPlan } from '../lib/subscription.js';
 import { requireAuth } from '../middleware/auth.js';
 import type { Types } from 'mongoose';
 
@@ -164,6 +165,7 @@ analyticsRouter.get(
   requireAuth,
   async (req: Request, res: Response<ApiResponse<RevenueOverview>>) => {
     const businessId = req.business!._id;
+    await assertPaidPlan(businessId, 'Revenue charts');
     const requested = Number(req.query.days ?? 30);
     const range: RevenueRange = (REVENUE_RANGES as readonly number[]).includes(requested)
       ? (requested as RevenueRange)
@@ -205,6 +207,7 @@ analyticsRouter.get(
   requireAuth,
   async (req: Request, res: Response<ApiResponse<PaymentStatusOverview>>) => {
     const businessId = req.business!._id;
+    await assertPaidPlan(businessId, 'Payment status charts');
     const buckets = await computeStatusBuckets(businessId);
 
     const paid = buckets.collected;

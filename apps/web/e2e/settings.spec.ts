@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { registerUser, addCustomer, loginUser, logout } from './helpers';
+import { registerUser, addCustomer, loginUser, logout, selectPlan } from './helpers';
 
 const NEW_PASSWORD = 'E2ePassw0rd#2';
 
@@ -40,6 +40,7 @@ test.describe('app settings', () => {
 
   test('saves branding and updates notification preferences', async ({ page }) => {
     await registerUser(page, 'Brand Studio');
+    await selectPlan(page, 'PRO');
     await page.goto('/app/settings');
 
     await tab(page, 'Branding').click();

@@ -4,6 +4,7 @@ import { Invoice, type IInvoice } from '../models/Invoice.js';
 import { Business } from '../models/Business.js';
 import { Payment } from '../models/Payment.js';
 import { effectiveStatus } from '../lib/invoice-status.js';
+import { getOrCreateSubscription } from '../lib/subscription.js';
 import { getPaymentProviderForBusiness } from '../lib/payment/gateway.js';
 import { toMinor } from '../lib/payment/provider.js';
 import { writeAuditLog } from '../lib/audit.js';
@@ -59,8 +60,11 @@ publicRouter.get(
       return;
     }
 
+    const subscription = await getOrCreateSubscription(invoice.businessId);
+    const logoUrl = subscription.plan === 'FREE' ? undefined : business.logoUrl;
+
     res.status(200).json({
-      data: loadPublicInvoice(invoice, business.name, business.logoUrl),
+      data: loadPublicInvoice(invoice, business.name, logoUrl),
       error: null,
       meta: null,
     });
