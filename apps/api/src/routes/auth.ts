@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from 'express';
 import bcrypt from 'bcryptjs';
-import { registerSchema, loginSchema, verifyEmailSchema, resendOtpSchema, forgotPasswordSchema, resetPasswordSchema } from '@payflow/validation';
+import { registerSchema, loginSchema, verifyEmailSchema, resendOtpSchema, forgotPasswordSchema, resetPasswordSchema, changePasswordSchema } from '@payflow/validation';
 import type { ApiResponse, AuthResult, RegisterResult } from '@payflow/types';
 import { User } from '../models/User.js';
 import { Business } from '../models/Business.js';
@@ -10,6 +10,7 @@ import { formatUser, formatBusiness } from '../lib/serializers.js';
 import { ensureBusiness } from '../lib/business.js';
 import { requireAuth } from '../middleware/auth.js';
 import { createRateLimiter } from '../middleware/rate-limit.js';
+import { writeAuditLog } from '../lib/audit.js';
 
 export const authRouter = Router();
 
@@ -554,6 +555,61 @@ authRouter.post(
     user.failedVerificationAttempts = 0;
     user.lastVerificationAttemptAt = null;
     await user.save();
+
+    res.status(200).json({ data: { success: true }, error: null, meta: null });
+  },
+);
+
+authRouter.patch(
+  '/api/auth/password',
+  requireAuth,
+  async (req: Request, res: Response<ApiResponse<{ success: boolean }>>) => {
+    const parsed = changePasswordSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({
+        data: null,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Current password and a new password (at least 8 characters) are required.',
+        },
+        meta: null,
+      });
+      return;
+    }
+
+    const user = await User.findById(req.user!._id);
+    if (!user) {
+      res.status(404).json({
+        data: null,
+        error: { code: 'USER_NOT_FOUND', message: 'User not found.' },
+        meta: null,
+      });
+      return;
+    }
+
+    const passwordValid = await bcrypt.compare(parsed.data.currentPassword, user.passwordHash);
+    if (!passwordValid) {
+      res.status(400).json({
+        data: null,
+        error: {
+          code: 'INVALID_CURRENT_PASSWORD',
+          message: 'Your current password is incorrect.',
+        },
+        meta: null,
+      });
+      return;
+    }
+
+    user.passwordHash = await bcrypt.hash(parsed.data.newPassword, 12);
+    await user.save();
+
+    await writeAuditLog({
+      businessId: req.business!._id,
+      actorUserId: user._id,
+      action: 'password_changed',
+      entityType: 'user',
+      entityId: String(user._id),
+    });
 
     res.status(200).json({ data: { success: true }, error: null, meta: null });
   },

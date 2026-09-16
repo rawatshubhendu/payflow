@@ -79,6 +79,13 @@ export type BusinessSummary = {
   phone?: string;
   address?: string;
   logoUrl?: string;
+  defaultTaxRate?: number;
+  defaultTaxType?: TaxType;
+  defaultDueDays?: number;
+  invoiceNotes?: string;
+  thankYouNote?: string;
+  notifyInvoiceSent?: boolean;
+  notifyPaymentReceived?: boolean;
 };
 
 export type AuthResult = {
@@ -233,6 +240,7 @@ export type PaymentStatusOverview = {
 
 export type PublicInvoice = {
   businessName: string;
+  businessLogoUrl?: string;
   invoiceNumber: string;
   status: Exclude<InvoiceStatus, 'DRAFT'>;
   currency: string;

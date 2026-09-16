@@ -248,15 +248,17 @@ invoiceRouter.post('/api/invoices/:id/send', requireAuth, async (req: Request, r
     ? invoice.dueDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
     : 'no due date';
 
-  await sendInvoiceSentEmail({
-    to: customer.email,
-    businessName: req.business!.name,
-    invoiceNumber: invoice.invoiceNumber,
-    totalAmount: amount,
-    currency,
-    dueDate: dueLabel,
-    paymentUrl,
-  });
+  if (req.business!.notifyInvoiceSent !== false) {
+    await sendInvoiceSentEmail({
+      to: customer.email,
+      businessName: req.business!.name,
+      invoiceNumber: invoice.invoiceNumber,
+      totalAmount: amount,
+      currency,
+      dueDate: dueLabel,
+      paymentUrl,
+    });
+  }
 
   invoice.status = 'SENT';
   invoice.sentAt = new Date();

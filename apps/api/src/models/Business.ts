@@ -1,4 +1,5 @@
 import mongoose, { Schema, type Document, type Model, type Types } from 'mongoose';
+import type { TaxType } from '@payflow/types';
 
 export interface IBusiness extends Document {
   ownerId: Types.ObjectId;
@@ -9,6 +10,13 @@ export interface IBusiness extends Document {
   address?: string;
   currency: string;
   invoicePrefix: string;
+  defaultTaxRate?: number;
+  defaultTaxType?: TaxType;
+  defaultDueDays?: number;
+  invoiceNotes?: string;
+  thankYouNote?: string;
+  notifyInvoiceSent?: boolean;
+  notifyPaymentReceived?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -55,6 +63,39 @@ const businessSchema = new Schema<IBusiness>(
       type: String,
       default: 'INV-',
       trim: true,
+    },
+    defaultTaxRate: {
+      type: Number,
+      default: 18,
+      min: 0,
+      max: 100,
+    },
+    defaultTaxType: {
+      type: String,
+      enum: ['NONE', 'CGST_SGST', 'IGST'],
+      default: 'NONE',
+    },
+    defaultDueDays: {
+      type: Number,
+      default: 14,
+      min: 0,
+      max: 365,
+    },
+    invoiceNotes: {
+      type: String,
+      default: undefined,
+    },
+    thankYouNote: {
+      type: String,
+      default: undefined,
+    },
+    notifyInvoiceSent: {
+      type: Boolean,
+      default: true,
+    },
+    notifyPaymentReceived: {
+      type: Boolean,
+      default: true,
     },
   },
   {

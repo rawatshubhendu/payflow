@@ -19,10 +19,11 @@ const payOrderLimiter = createRateLimiter({
   message: 'Too many payment attempts. Please wait and try again.',
 });
 
-function loadPublicInvoice(invoice: IInvoice, businessName: string): PublicInvoice {
+function loadPublicInvoice(invoice: IInvoice, businessName: string, businessLogoUrl?: string): PublicInvoice {
   const status = effectiveStatus(invoice) === 'DRAFT' ? 'SENT' : effectiveStatus(invoice);
   return {
     businessName,
+    businessLogoUrl,
     invoiceNumber: invoice.invoiceNumber,
     status: status as PublicInvoice['status'],
     currency: invoice.currency || 'INR',
@@ -59,7 +60,7 @@ publicRouter.get(
     }
 
     res.status(200).json({
-      data: loadPublicInvoice(invoice, business.name),
+      data: loadPublicInvoice(invoice, business.name, business.logoUrl),
       error: null,
       meta: null,
     });

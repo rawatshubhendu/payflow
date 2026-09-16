@@ -12,14 +12,14 @@ const TAX_RATE_PRESETS = [0, 5, 12, 18, 28];
 
 const EMPTY_ITEM: LineItemInput = { description: '', quantity: 1, unitPrice: 0 };
 
-function todayISO(): string {
-  return new Date().toISOString().slice(0, 10);
+function plusDaysISO(days: number): string {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  return date.toISOString().slice(0, 10);
 }
 
-function plusFourteenDaysISO(): string {
-  const date = new Date();
-  date.setDate(date.getDate() + 14);
-  return date.toISOString().slice(0, 10);
+function todayISO(): string {
+  return new Date().toISOString().slice(0, 10);
 }
 
 function roundMoney(value: number): number {
@@ -46,11 +46,20 @@ export function InvoiceForm({ mode, invoiceId }: { mode: 'create' | 'edit'; invo
   const [taxRate, setTaxRate] = useState(18);
   const [taxType, setTaxType] = useState<TaxType>('NONE');
   const [issueDate, setIssueDate] = useState(todayISO());
-  const [dueDate, setDueDate] = useState(plusFourteenDaysISO());
+  const [dueDate, setDueDate] = useState(plusDaysISO(14));
 
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [saving, setSaving] = useState(false);
+  const [defaultsApplied, setDefaultsApplied] = useState(false);
+
+  useEffect(() => {
+    if (mode !== 'create' || defaultsApplied || !business) return;
+    if (business.defaultTaxRate !== undefined) setTaxRate(business.defaultTaxRate);
+    if (business.defaultTaxType !== undefined) setTaxType(business.defaultTaxType);
+    if (business.defaultDueDays !== undefined) setDueDate(plusDaysISO(business.defaultDueDays));
+    setDefaultsApplied(true);
+  }, [business, mode, defaultsApplied]);
 
   useEffect(() => {
     api
@@ -77,7 +86,7 @@ export function InvoiceForm({ mode, invoiceId }: { mode: 'create' | 'edit'; invo
         setTaxRate(invoice.taxRate);
         setTaxType(invoice.taxType);
         setIssueDate(invoice.issueDate ? invoice.issueDate.slice(0, 10) : todayISO());
-        setDueDate(invoice.dueDate ? invoice.dueDate.slice(0, 10) : plusFourteenDaysISO());
+        setDueDate(invoice.dueDate ? invoice.dueDate.slice(0, 10) : plusDaysISO(14));
       })
       .catch((err) => setError(err instanceof ApiError ? err.message : 'Failed to load invoice.'))
       .finally(() => setLoading(false));

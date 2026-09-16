@@ -6,6 +6,7 @@ export {
   resendOtpSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
+  changePasswordSchema,
   updateBusinessSchema,
   type RegisterInput,
   type LoginInput,
@@ -13,6 +14,7 @@ export {
   type ResendOtpInput,
   type ForgotPasswordInput,
   type ResetPasswordInput,
+  type ChangePasswordInput,
   type UpdateBusinessInput,
 } from './auth.js';
 export {

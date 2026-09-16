@@ -24,6 +24,13 @@ export function formatBusiness(business: IBusiness): BusinessSummary {
     phone: business.phone,
     address: business.address,
     logoUrl: business.logoUrl,
+    defaultTaxRate: business.defaultTaxRate,
+    defaultTaxType: business.defaultTaxType,
+    defaultDueDays: business.defaultDueDays,
+    invoiceNotes: business.invoiceNotes,
+    thankYouNote: business.thankYouNote,
+    notifyInvoiceSent: business.notifyInvoiceSent,
+    notifyPaymentReceived: business.notifyPaymentReceived,
   };
 }
 

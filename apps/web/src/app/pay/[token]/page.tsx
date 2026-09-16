@@ -114,7 +114,7 @@ export default function PublicPayPage({ params }: { params: Promise<{ token: str
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6">
-      <p className="text-[12px] font-semibold tracking-[0.22em]">PAYFLOW</p>
+      <p className="text-center text-[12px] font-semibold tracking-[0.22em]">PAYFLOW</p>
       <section className="mt-8 rounded-3xl border border-line bg-elevated p-8">
         {state.phase === 'loading' ? <CenterNote text="Loading invoice..." /> : null}
         {state.phase === 'error' ? (
@@ -206,6 +206,13 @@ function InvoiceCard({
 
   return (
     <>
+      {invoice.businessLogoUrl ? (
+        <img
+          src={invoice.businessLogoUrl}
+          alt={invoice.businessName}
+          className="mx-auto h-16 w-auto object-contain"
+        />
+      ) : null}
       <p className="text-sm text-muted">{invoice.businessName}</p>
       <h1 className="mt-2 font-serif text-2xl">{invoice.invoiceNumber}</h1>
       <p className="mt-1 text-sm text-muted">

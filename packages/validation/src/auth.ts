@@ -54,6 +54,20 @@ export const updateBusinessSchema = z.object({
   currency: z.string().min(3).max(3).default('INR').optional(),
   invoicePrefix: z.string().min(1).max(10).trim().default('INV-').optional(),
   logoUrl: z.string().url('Invalid logo URL').optional(),
+  defaultTaxRate: z.number().min(0, 'Tax rate cannot be negative').max(100, 'Tax rate cannot exceed 100%').optional(),
+  defaultTaxType: z.enum(['NONE', 'CGST_SGST', 'IGST']).optional(),
+  defaultDueDays: z.number().int('Due days must be a whole number').min(0, 'Due days cannot be negative').max(365, 'Due days cannot exceed 365').optional(),
+  invoiceNotes: z.string().max(2000, 'Invoice notes cannot exceed 2000 characters').trim().optional(),
+  thankYouNote: z.string().max(2000, 'Thank-you note cannot exceed 2000 characters').trim().optional(),
+  notifyInvoiceSent: z.boolean().optional(),
+  notifyPaymentReceived: z.boolean().optional(),
 });
 
 export type UpdateBusinessInput = z.infer<typeof updateBusinessSchema>;
+
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, 'Current password is required'),
+  newPassword: z.string().min(8, 'New password must be at least 8 characters').max(100, 'Password is too long'),
+});
+
+export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;

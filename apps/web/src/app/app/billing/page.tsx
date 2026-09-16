@@ -59,6 +59,11 @@ export default function BillingPage() {
       ? Math.min(100, Math.round((info.limits.invoicesUsed / info.limits.invoiceLimit) * 100))
       : 0;
 
+  const overLimit = info ? info.limits.invoicesUsed > info.limits.invoiceLimit : false;
+  const overCount = info && info.limits.invoiceLimit > 0
+    ? Math.max(0, info.limits.invoicesUsed - info.limits.invoiceLimit)
+    : 0;
+
   return (
     <AppShell title="Billing" description="Your PayFlow plan is separate from client invoice payments.">
       {error ? (
@@ -89,11 +94,20 @@ export default function BillingPage() {
             </div>
             <div className="mt-5">
               <div className="h-2.5 w-full overflow-hidden rounded-full bg-black/5">
-                <div className="h-full rounded-full bg-accent" style={{ width: `${usagePct}%` }} />
+                <div className={`h-full rounded-full ${overLimit ? 'bg-amber-500' : 'bg-accent'}`} style={{ width: `${usagePct}%` }} />
               </div>
-              <p className="mt-2 text-xs text-muted">
-                {info.limits.invoicesUsed} of {info.limits.invoiceLimit} invoices used this month.
-              </p>
+              {overLimit ? (
+                <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50/70 p-3 text-sm text-amber-800">
+                  <p className="font-medium">You have used {info.limits.invoicesUsed} of {info.limits.invoiceLimit} invoices this month — {overCount} over your {info.plan} plan limit.</p>
+                  <p className="mt-1 text-xs">
+                    Invoice creation is paused until the plan resets on {new Date(info.nextResetAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}. Upgrade to keep invoicing.
+                  </p>
+                </div>
+              ) : (
+                <p className="mt-2 text-xs text-muted">
+                  {info.limits.invoicesUsed} of {info.limits.invoiceLimit} invoices used this month.
+                </p>
+              )}
             </div>
           </div>
 

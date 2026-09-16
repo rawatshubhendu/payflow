@@ -4,6 +4,11 @@ import { useState, useEffect } from 'react';
 import { AppShell } from '@/components/app/app-shell';
 import { Button } from '@/components/ui/button';
 import { PaymentGatewaySettings } from '@/components/app/payment-gateway-settings';
+import { BrandingSettings } from '@/components/app/branding-settings';
+import { InvoiceDefaultsSettings } from '@/components/app/invoice-defaults-settings';
+import { NotificationSettings } from '@/components/app/notification-settings';
+import { SecuritySettings } from '@/components/app/security-settings';
+import { BillingSettings } from '@/components/app/billing-settings';
 import { useAuth, ApiError } from '@/lib/auth-context';
 import { api } from '@/lib/api-client';
 import type { BusinessSummary } from '@payflow/types';
@@ -188,11 +193,16 @@ export default function SettingsPage() {
             </form>
           ) : activeTab === 'Payments' ? (
             <PaymentGatewaySettings />
+          ) : activeTab === 'Branding' ? (
+            <BrandingSettings />
+          ) : activeTab === 'Invoice defaults' ? (
+            <InvoiceDefaultsSettings />
+          ) : activeTab === 'Notifications' ? (
+            <NotificationSettings />
+          ) : activeTab === 'Security' ? (
+            <SecuritySettings />
           ) : (
-            <div className="rounded-2xl border border-line bg-elevated p-8 text-center text-sm text-muted">
-              <p className="font-medium text-ink">{activeTab}</p>
-              <p className="mt-2">Settings for {activeTab.toLowerCase()} will be enabled in upcoming slices.</p>
-            </div>
+            <BillingSettings />
           )}
         </div>
       </div>

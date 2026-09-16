@@ -135,7 +135,7 @@ export function createWebhookRouter(logger: Logger): Router {
         metadata: { invoiceNumber: invoice.invoiceNumber, amount: payment.amount },
       });
 
-      if (business) {
+      if (business && business.notifyPaymentReceived !== false) {
         try {
           const owner = await User.findById(business.ownerId).select('email').lean();
           if (owner?.email) {
