@@ -16,11 +16,24 @@ export const envSchema = z.object({
   RAZORPAY_KEY_SECRET: z.string().min(1).optional(),
   RAZORPAY_WEBHOOK_SECRET: z.string().min(16).optional(),
   RAZORPAY_API_BASE: z.string().url().optional(),
-  SUBSCRIPTION_SANDBOX: z
-    .enum(['true', 'false'])
-    .optional()
-    .default('true')
-    .transform((value) => value !== 'false'),
+  SUBSCRIPTION_SANDBOX: z.preprocess((value) => {
+    if (typeof value === 'boolean') {
+      return value;
+    }
+    if (typeof value === 'string') {
+      const normalized = value.trim().replace(/^["']|["']$/g, '').toLowerCase();
+      if (normalized === 'true') {
+        return true;
+      }
+      if (normalized === 'false') {
+        return false;
+      }
+      if (normalized === '') {
+        return undefined;
+      }
+    }
+    return value;
+  }, z.boolean().optional().default(true)),
   ADMIN_EMAILS: z.string().default(''),
 });
 
