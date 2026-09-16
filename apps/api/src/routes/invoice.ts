@@ -17,6 +17,7 @@ import { getPaymentProviderForBusiness } from '../lib/payment/gateway.js';
 import { assertInvoiceLimit } from '../lib/subscription.js';
 import { toMinor } from '../lib/payment/provider.js';
 import { writeAuditLog } from '../lib/audit.js';
+import { createNotification } from '../lib/notifications.js';
 import { requireAuth } from '../middleware/auth.js';
 import { AppError } from '../middleware/errorHandler.js';
 import { sendApiError, sendValidationError } from '../lib/http.js';
@@ -263,6 +264,20 @@ invoiceRouter.post('/api/invoices/:id/send', requireAuth, async (req: Request, r
   invoice.status = 'SENT';
   invoice.sentAt = new Date();
   await invoice.save();
+
+  try {
+    await createNotification({
+      businessId: invoice.businessId,
+      type: 'INVOICE_SENT',
+      title: 'Invoice sent',
+      message: `Invoice ${invoice.invoiceNumber} sent to ${customer.name}`,
+      invoiceId: invoice._id,
+      invoiceNumber: invoice.invoiceNumber,
+      amount: invoice.totalAmount,
+    });
+  } catch {
+    // best-effort: notification persistence must not block invoice send
+  }
 
   res.status(200).json({
     data: formatInvoiceDetail(invoice, customer.name),

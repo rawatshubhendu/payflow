@@ -441,3 +441,88 @@ test('handles payment.failed events and marks the payment FAILED', async () => {
   assert.equal(payment?.status, 'FAILED');
   assert.equal(payment?.gatewayPaymentId, 'pay_fail_1');
 });
+
+async function getNotifications(tenant: Awaited<ReturnType<typeof createTenant>>) {
+  const res = await fetch(`${baseUrl}/api/notifications`, {
+    headers: { Authorization: `Bearer ${tenant.token}` },
+  });
+  assert.equal(res.status, 200);
+  const body = (await res.json()) as {
+    data: {
+      notifications: Array<{ id: string; type: string; title: string; message: string; amount: number | null; read: boolean }>;
+      unreadCount: number;
+    };
+  };
+  return body.data;
+}
+
+test('creates a payment received notification when a capture succeeds', async () => {
+  const raw = Buffer.from(JSON.stringify(paymentCapturedEvent('pay_notif_1', gatewayOrderId)));
+  const res = await postWebhook(raw, signWebhook(raw, GATEWAY_WEBHOOK_SECRET));
+  assert.equal(res.status, 200, JSON.stringify(res.json));
+
+  const data = await getNotifications(gatewayTenant);
+  const received = data.notifications.find((item) => item.type === 'PAYMENT_RECEIVED');
+  assert.ok(received, 'expected a PAYMENT_RECEIVED notification');
+  assert.equal(received?.read, false);
+  assert.equal(received?.amount, 1180);
+  assert.equal(received?.title, 'Payment received');
+  assert.ok(received?.message.includes('INV-'));
+  assert.ok(data.unreadCount >= 1);
+});
+
+test('creates a payment failed notification when a capture fails', async () => {
+  const raw = Buffer.from(JSON.stringify(paymentFailedEvent('pay_notif_fail_1', failOrderId)));
+  const res = await postWebhook(raw, signWebhook(raw, GATEWAY_WEBHOOK_SECRET));
+  assert.equal(res.status, 200, JSON.stringify(res.json));
+
+  const data = await getNotifications(gatewayTenant);
+  const failed = data.notifications.find((item) => item.type === 'PAYMENT_FAILED');
+  assert.ok(failed, 'expected a PAYMENT_FAILED notification');
+});
+
+test('marking all notifications read resets the unread count', async () => {
+  const raw = Buffer.from(JSON.stringify(paymentCapturedEvent('pay_notif_read_1', gatewayOrderId)));
+  const before = await postWebhook(raw, signWebhook(raw, GATEWAY_WEBHOOK_SECRET));
+  assert.equal(before.status, 200, JSON.stringify(before.json));
+
+  const res = await fetch(`${baseUrl}/api/notifications/read`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${gatewayTenant.token}` },
+    body: JSON.stringify({}),
+  });
+  assert.equal(res.status, 200);
+  const body = (await res.json()) as { data: { unreadCount: number } };
+  assert.equal(body.data.unreadCount, 0);
+
+  const after = await getNotifications(gatewayTenant);
+  assert.equal(after.unreadCount, 0);
+  assert.ok(after.notifications.length > 0);
+});
+
+test('marking a single notification read only affects that one', async () => {
+  const raw = Buffer.from(JSON.stringify(paymentCapturedEvent('pay_notif_one_1', gatewayOrderId)));
+  const before = await postWebhook(raw, signWebhook(raw, GATEWAY_WEBHOOK_SECRET));
+  assert.equal(before.status, 200, JSON.stringify(before.json));
+
+  const list = await getNotifications(gatewayTenant);
+  const unread = list.notifications.filter((item) => !item.read);
+  assert.ok(unread.length > 0, 'expected at least one unread notification');
+  const beforeUnread = unread.length;
+
+  const target = unread[0]!;
+  const res = await fetch(`${baseUrl}/api/notifications/read`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${gatewayTenant.token}` },
+    body: JSON.stringify({ ids: [target.id] }),
+  });
+  assert.equal(res.status, 200);
+  const body = (await res.json()) as { data: { unreadCount: number } };
+  assert.equal(body.data.unreadCount, beforeUnread - 1);
+
+  const after = await getNotifications(gatewayTenant);
+  const marked = after.notifications.find((item) => item.id === target.id);
+  assert.equal(marked?.read, true);
+  const stillUnread = after.notifications.filter((item) => !item.read);
+  assert.equal(stillUnread.length, beforeUnread - 1);
+});

@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { Bell, Search } from 'lucide-react';
 import { Sidebar } from '@/components/app/sidebar';
+import { NotificationBell } from '@/components/app/notification-bell';
 import { useAuth } from '@/lib/auth-context';
 
 export function AppShell({
@@ -33,23 +33,9 @@ export function AppShell({
             Create
           </Link>
         </div>
-        <header className="flex items-center justify-between border-b border-line px-4 py-3 md:px-8 shrink-0">
-          <label className="flex max-w-md flex-1 items-center gap-2 rounded-full border border-line bg-elevated px-3 py-2 text-sm text-muted">
-            <Search size={16} />
-            <input
-              type="text"
-              placeholder="Search invoices or customers"
-              className="w-full bg-transparent border-none outline-none text-sm text-ink placeholder:text-muted"
-            />
-          </label>
-          <div className="ml-4 flex items-center gap-3">
-            <button
-              type="button"
-              aria-label="Notifications"
-              className="rounded-full border border-line p-2 text-muted hover:text-ink transition-colors"
-            >
-              <Bell size={16} />
-            </button>
+        <header className="flex items-center justify-end border-b border-line px-4 py-3 md:px-8 shrink-0">
+          <div className="flex items-center gap-3">
+            <NotificationBell />
             <Link
               href="/app/settings"
               title={user?.email || 'Account settings'}

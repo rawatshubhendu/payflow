@@ -8,6 +8,25 @@ export type InvoiceStatus =
 
 export type PaymentStatus = 'CREATED' | 'AUTHORIZED' | 'CAPTURED' | 'FAILED' | 'REFUNDED';
 
+export type NotificationType = 'PAYMENT_RECEIVED' | 'PAYMENT_FAILED' | 'INVOICE_SENT';
+
+export type AppNotification = {
+  id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  invoiceId: string | null;
+  invoiceNumber: string | null;
+  amount: number | null;
+  read: boolean;
+  createdAt: string;
+};
+
+export type NotificationListResult = {
+  notifications: AppNotification[];
+  unreadCount: number;
+};
+
 export type SubscriptionPlan = 'FREE' | 'PRO' | 'BUSINESS';
 
 export type SubscriptionStatus = 'ACTIVE' | 'TRIALING' | 'INACTIVE';

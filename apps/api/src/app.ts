@@ -20,6 +20,7 @@ import { paymentGatewayRouter } from './routes/payment-gateway.js';
 import { publicRouter } from './routes/public.js';
 import { createWebhookRouter } from './routes/webhook.js';
 import { createSubscriptionRouter } from './routes/subscription.js';
+import { notificationRouter } from './routes/notification.js';
 import { adminRouter } from './routes/admin.js';
 
 export function createApp(logger: Logger) {
@@ -67,6 +68,7 @@ export function createApp(logger: Logger) {
   app.use(publicRouter);
   app.use(createWebhookRouter(logger));
   app.use(createSubscriptionRouter(logger));
+app.use(notificationRouter);
   app.use(adminRouter);
 
   app.use(notFound);

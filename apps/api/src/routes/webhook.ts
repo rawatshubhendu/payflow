@@ -8,6 +8,7 @@ import { getWebhookSecretForOrder } from '../lib/payment/gateway.js';
 import { verifyWebhookSignature } from '../lib/payment/razorpay.js';
 import { toMinor } from '../lib/payment/provider.js';
 import { writeAuditLog } from '../lib/audit.js';
+import { createNotification } from '../lib/notifications.js';
 import { sendPaymentReceivedEmail } from '../lib/email.js';
 import { createRateLimiter } from '../middleware/rate-limit.js';
 
@@ -135,6 +136,20 @@ export function createWebhookRouter(logger: Logger): Router {
         metadata: { invoiceNumber: invoice.invoiceNumber, amount: payment.amount },
       });
 
+      try {
+        await createNotification({
+          businessId: payment.businessId,
+          type: 'PAYMENT_RECEIVED',
+          title: 'Payment received',
+          message: `Payment received for ${invoice.invoiceNumber}`,
+          invoiceId: invoice._id,
+          invoiceNumber: invoice.invoiceNumber,
+          amount: payment.amount,
+        });
+      } catch (err) {
+        logger.warn({ err }, 'failed to record payment received notification');
+      }
+
       if (business && business.notifyPaymentReceived !== false) {
         try {
           const owner = await User.findById(business.ownerId).select('email').lean();
@@ -183,6 +198,20 @@ export function createWebhookRouter(logger: Logger): Router {
         entityId: paymentId,
         metadata: { invoiceNumber: invoice.invoiceNumber, amount: payment.amount },
       });
+
+      try {
+        await createNotification({
+          businessId: payment.businessId,
+          type: 'PAYMENT_FAILED',
+          title: 'Payment failed',
+          message: `Payment failed for ${invoice.invoiceNumber}`,
+          invoiceId: invoice._id,
+          invoiceNumber: invoice.invoiceNumber,
+          amount: payment.amount,
+        });
+      } catch (err) {
+        logger.warn({ err }, 'failed to record payment failed notification');
+      }
 
       logger.info({ paymentId, orderId, invoice: invoice.invoiceNumber }, 'payment failed');
       res.status(200).json({ data: { success: true }, error: null, meta: null });
