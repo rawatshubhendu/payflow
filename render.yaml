@@ -70,6 +70,8 @@ services:
       - key: NODE_ENV
         value: production
       - key: NEXT_PUBLIC_API_ORIGIN
+        value: ""
+      - key: API_ORIGIN
         fromService:
           name: payflow-api
           type: web

@@ -1,6 +1,8 @@
 import type { ApiResponse } from '@payflow/types';
 
-const API_ORIGIN = process.env.NEXT_PUBLIC_API_ORIGIN || 'http://localhost:4000';
+// When unset in production, requests go to the same origin and are proxied to
+// the API by Next rewrites so the session cookie stays on the web hostname.
+const API_ORIGIN = (process.env.NEXT_PUBLIC_API_ORIGIN || '').replace(/\/+$/, '');
 
 export class ApiError extends Error {
   code: string;
