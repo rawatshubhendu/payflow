@@ -4,7 +4,7 @@ import { isDatabaseConnected } from '../db/mongoose.js';
 
 export const healthRouter = Router();
 
-healthRouter.get('/health', (_req, res) => {
+healthRouter.get('/api/health', (_req, res) => {
   const database = isDatabaseConnected() ? 'connected' : 'disconnected';
   const payload: ApiSuccess<HealthStatus> = {
     data: {
