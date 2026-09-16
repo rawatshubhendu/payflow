@@ -42,12 +42,6 @@ jobs:
         run: |
           npm run lint -w apps/api
           npm run lint -w apps/web
-      - name: Test
-        run: npm test -w apps/api
-      - name: Build web
-        run: npm run build -w apps/web
-      - name: Build API
-        run: npm run build -w apps/api
       - name: Ensure mongod binary
         run: |
           if command -v mongod >/dev/null 2>&1; then
@@ -60,6 +54,12 @@ jobs:
             sudo apt-get update
             sudo apt-get install -y mongodb-org-server
           fi
+      - name: Test
+        run: npm test -w apps/api
+      - name: Build web
+        run: npm run build -w apps/web
+      - name: Build API
+        run: npm run build -w apps/api
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
       - name: E2E tests
