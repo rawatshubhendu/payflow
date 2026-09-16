@@ -7,12 +7,12 @@
  * killed (Playwright sends SIGTERM when the suite finishes), then cleans up.
  *
  * Env contract (inherited from the shell):
- *  - loads repo-root `.env` (or `.env.ci`) so the API gets the same
+ *  - loads repo-root `.env` so the API gets the same
  *    SESSION_SECRET / RAZORPAY_* / etc. that the web build used.
  *  - MONGODB_URI, PORT and EMAIL_INTERCEPT_URL are always overridden.
  */
 import { spawn } from 'node:child_process';
-import { mkdtempSync, rmSync, existsSync, accessSync, constants } from 'node:fs';
+import { mkdtempSync, rmSync, accessSync, constants } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { dirname } from 'node:path';
@@ -29,7 +29,7 @@ const API_PORT = 4001;
 const CATCHER_PORT = 8099;
 const MONGOD_PATHS = ['/opt/homebrew/bin/mongod', '/usr/local/bin/mongod', '/usr/bin/mongod'];
 
-const ENV_FILE = [join(REPO_ROOT, '.env'), join(REPO_ROOT, '.env.ci')].find((p) => existsSync(p));
+const ENV_FILE = join(REPO_ROOT, '.env');
 
 function findMongod() {
   for (const candidate of MONGOD_PATHS) {
