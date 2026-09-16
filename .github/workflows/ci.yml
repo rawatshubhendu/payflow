@@ -46,14 +46,14 @@ jobs:
         run: |
           if command -v mongod >/dev/null 2>&1; then
             echo "mongod is available on PATH"
-          else
-            sudo apt-get update
-            sudo apt-get install -y gnupg curl
-            curl -fsSL https://www.mongodb.org/static/pgp/server-7.0.asc | sudo gpg --dearmor -o /usr/share/keyrings/mongodb-server-7.0.gpg
-            echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/ubuntu $(lsb_release -cs)/mongodb-org/7.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
-            sudo apt-get update
-            sudo apt-get install -y mongodb-org-server
+            exit 0
           fi
+          sudo apt-get update
+          sudo apt-get install -y gnupg curl
+          curl --retry 5 --retry-all-errors --retry-delay 5 -fsSL https://www.mongodb.org/static/pgp/server-8.0.asc | sudo gpg --dearmor -o /usr/share/keyrings/mongodb-server-8.0.gpg
+          echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-8.0.gpg ] https://repo.mongodb.org/apt/ubuntu $(lsb_release -cs)/mongodb-org/8.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-8.0.list
+          sudo apt-get update
+          sudo apt-get install -y mongodb-org-server
       - name: Test
         run: npm test -w apps/api
       - name: Build web
