@@ -9,6 +9,7 @@ import { api, ApiError } from '@/lib/api-client';
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [devCode, setDevCode] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -18,7 +19,11 @@ export default function ForgotPasswordPage() {
     setLoading(true);
 
     try {
-      await api.post('/api/auth/forgot-password', { email });
+      const result = await api.post<{ success: boolean; expiresAt?: string; devCode?: string }>(
+        '/api/auth/forgot-password',
+        { email },
+      );
+      setDevCode(result.devCode ?? null);
       setSubmitted(true);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Something went wrong. Please try again.');
@@ -53,6 +58,12 @@ export default function ForgotPasswordPage() {
         <div className="mt-8 rounded-2xl border border-line bg-elevated p-6">
           <p className="text-sm">If an account exists for <strong>{email}</strong>, a reset code is on its way.</p>
           <p className="mt-2 text-sm text-muted">The code expires in 15 minutes.</p>
+          {devCode ? (
+            <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50/60 p-3 text-sm text-amber-800">
+              Demo mode — email delivery is disabled, so this is your reset code:{' '}
+              <span className="font-mono text-base font-bold tracking-[0.2em]">{devCode}</span>
+            </p>
+          ) : null}
           <Link href="/reset-password" className="mt-4 inline-block text-sm font-medium text-accent">
             I have my code — enter it →
           </Link>

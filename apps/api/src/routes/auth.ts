@@ -5,7 +5,7 @@ import type { ApiResponse, AuthResult, RegisterResult } from '@payflow/types';
 import { User } from '../models/User.js';
 import { Business } from '../models/Business.js';
 import { createSessionToken, setSessionCookie, clearSessionCookie } from '../lib/session.js';
-import { generateOtp, hashOtp, verifyOtpHash, sendVerificationEmail, sendPasswordResetEmail } from '../lib/email.js';
+import { generateOtp, hashOtp, verifyOtpHash, sendVerificationEmail, sendPasswordResetEmail, isDevEmailMode } from '../lib/email.js';
 import { formatUser, formatBusiness } from '../lib/serializers.js';
 import { ensureBusiness } from '../lib/business.js';
 import { requireAuth } from '../middleware/auth.js';
@@ -113,6 +113,7 @@ authRouter.post('/api/auth/register', authLimiter, async (req: Request, res: Res
       status: 'VERIFICATION_REQUIRED',
       email,
       expiresAt: expiresAt.toISOString(),
+      ...(isDevEmailMode() ? { devCode: otp } : {}),
     },
     error: null,
     meta: null,
@@ -326,6 +327,7 @@ authRouter.post('/api/auth/resend-otp', authLimiter, async (req: Request, res: R
     data: {
       success: true,
       expiresAt: user.verificationCodeExpiresAt?.toISOString(),
+      ...(isDevEmailMode() ? { devCode: otp } : {}),
     },
     error: null,
     meta: null,
@@ -402,7 +404,9 @@ authRouter.post('/api/auth/login', authLimiter, async (req: Request, res: Respon
       data: null,
       error: {
         code: 'EMAIL_NOT_VERIFIED',
-        message: 'Your email address is not verified yet. We have sent a new verification code to your email.',
+        message: isDevEmailMode()
+          ? `Your email address is not verified yet. Your verification code is ${otp}.`
+          : 'Your email address is not verified yet. We have sent a new verification code to your email.',
       },
       meta: null,
     });
@@ -477,7 +481,7 @@ authRouter.post(
     }
 
     res.status(200).json({
-      data: { success: true, expiresAt: expiresAt.toISOString() },
+      data: { success: true, expiresAt: expiresAt.toISOString(), ...(isDevEmailMode() ? { devCode: otp } : {}) },
       error: null,
       meta: null,
     });

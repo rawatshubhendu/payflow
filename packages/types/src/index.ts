@@ -127,6 +127,7 @@ export type RegisterResult = {
   status: 'VERIFICATION_REQUIRED';
   email: string;
   expiresAt: string;
+  devCode?: string;
 };
 
 export type VerifyEmailRequest = {
@@ -141,6 +142,7 @@ export type ResendOtpRequest = {
 export type ResendOtpResult = {
   success: boolean;
   expiresAt?: string;
+  devCode?: string;
 };
 
 export type LoginRequest = {

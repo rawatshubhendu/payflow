@@ -14,10 +14,17 @@ export async function verifyOtpHash(otp: string, hash: string): Promise<boolean>
   return await bcrypt.compare(otp, hash);
 }
 
+export function isDevEmailMode(env = loadEnv()): boolean {
+  if (env.EMAIL_DEV_MODE) {
+    return true;
+  }
+  return !(env.EMAIL_PROVIDER_API_KEY && env.EMAIL_FROM);
+}
+
 export async function sendVerificationEmail(email: string, otp: string): Promise<void> {
   const env = loadEnv();
 
-  if (env.EMAIL_PROVIDER_API_KEY && env.EMAIL_FROM) {
+  if (!isDevEmailMode(env) && env.EMAIL_PROVIDER_API_KEY && env.EMAIL_FROM) {
     // Production mode: Send via Resend
     try {
       const emailApiBase = env.EMAIL_INTERCEPT_URL ?? 'https://api.resend.com';
@@ -74,7 +81,7 @@ export async function sendVerificationEmail(email: string, otp: string): Promise
 export async function sendPasswordResetEmail(email: string, otp: string): Promise<void> {
   const env = loadEnv();
 
-  if (env.EMAIL_PROVIDER_API_KEY && env.EMAIL_FROM) {
+  if (!isDevEmailMode(env) && env.EMAIL_PROVIDER_API_KEY && env.EMAIL_FROM) {
     try {
       const emailApiBase = env.EMAIL_INTERCEPT_URL ?? 'https://api.resend.com';
       const response = await fetch(`${emailApiBase}/emails`, {
@@ -133,7 +140,7 @@ interface InvoiceEmailData {
 export async function sendInvoiceSentEmail(data: InvoiceEmailData): Promise<void> {
   const env = loadEnv();
 
-  if (env.EMAIL_PROVIDER_API_KEY && env.EMAIL_FROM) {
+  if (!isDevEmailMode(env) && env.EMAIL_PROVIDER_API_KEY && env.EMAIL_FROM) {
     try {
       const emailApiBase = env.EMAIL_INTERCEPT_URL ?? 'https://api.resend.com';
       const response = await fetch(`${emailApiBase}/emails`, {
@@ -189,7 +196,7 @@ interface PaymentReceivedEmailData {
 export async function sendPaymentReceivedEmail(data: PaymentReceivedEmailData): Promise<void> {
   const env = loadEnv();
 
-  if (env.EMAIL_PROVIDER_API_KEY && env.EMAIL_FROM) {
+  if (!isDevEmailMode(env) && env.EMAIL_PROVIDER_API_KEY && env.EMAIL_FROM) {
     try {
       const emailApiBase = env.EMAIL_INTERCEPT_URL ?? 'https://api.resend.com';
       const response = await fetch(`${emailApiBase}/emails`, {

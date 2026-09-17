@@ -48,6 +48,10 @@ services:
         sync: false
       - key: EMAIL_FROM
         sync: false
+      # Set EMAIL_DEV_MODE=true to skip real email delivery and surface the
+      # OTP on-screen instead (no Resend subscription needed for testing).
+      - key: EMAIL_DEV_MODE
+        sync: false
       - key: RAZORPAY_KEY_ID
         sync: false
       - key: RAZORPAY_KEY_SECRET

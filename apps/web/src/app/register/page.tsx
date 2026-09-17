@@ -26,6 +26,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [expiresAt, setExpiresAt] = useState<Date | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [devCode, setDevCode] = useState<string | null>(null);
 
   // Resend cooldown timer (in seconds)
   const [cooldown, setCooldown] = useState(0);
@@ -76,6 +77,10 @@ export default function RegisterPage() {
       setStep('verify');
       setCooldown(60);
       setResendStatus(null);
+      if (result.devCode) {
+        setDevCode(result.devCode);
+        setOtpCode(result.devCode);
+      }
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message);
@@ -136,6 +141,10 @@ export default function RegisterPage() {
       }
       setCooldown(60);
       setResendStatus('A new 6-digit code has been sent.');
+      if (result.devCode) {
+        setDevCode(result.devCode);
+        setOtpCode(result.devCode);
+      }
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message);
@@ -252,6 +261,13 @@ export default function RegisterPage() {
           <p className="mt-3 text-sm text-muted">
             We sent a 6-digit verification code to <span className="font-medium text-ink">{email}</span>.
           </p>
+
+          {!error && devCode ? (
+            <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50/60 p-3 text-sm text-amber-800">
+              Demo mode — email delivery is disabled, so this is your code:{' '}
+              <span className="font-mono text-base font-bold tracking-[0.2em]">{devCode}</span>
+            </div>
+          ) : null}
 
           {expiresAt && !showSuccess && (
             <p className="mt-2 text-xs text-muted">

@@ -10,6 +10,9 @@ export const envSchema = z.object({
   EMAIL_PROVIDER_API_KEY: z.string().min(1).optional(),
   EMAIL_FROM: z.string().email().optional(),
   EMAIL_INTERCEPT_URL: z.string().url().optional(),
+  EMAIL_DEV_MODE: z.preprocess((value) => {
+    return value === true || value === 'true' || value === '1';
+  }, z.boolean().optional().default(false)),
   ENCRYPTION_KEY: z.string().min(32).optional(),
   PUBLIC_API_ORIGIN: z.string().url().optional(),
   RAZORPAY_KEY_ID: z.string().min(1).optional(),
