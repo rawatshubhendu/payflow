@@ -24,7 +24,7 @@ export default defineConfig({
       reuseExistingServer: !process.env.CI,
     },
     {
-      command: 'PAYFLOW_E2E=1 PORT=3001 npm run start',
+      command: 'PAYFLOW_E2E=1 API_ORIGIN=http://localhost:4001 PORT=3001 npm run start',
       url: baseURL,
       timeout: 120_000,
       reuseExistingServer: !process.env.CI,

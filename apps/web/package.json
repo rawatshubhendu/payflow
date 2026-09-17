@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "test:e2e": "PAYFLOW_E2E=1 NEXT_PUBLIC_API_ORIGIN=http://localhost:4001 next build && PORT=3001 playwright test"
+    "test:e2e": "PAYFLOW_E2E=1 API_ORIGIN=http://localhost:4001 NEXT_PUBLIC_API_ORIGIN=http://localhost:4001 next build && PORT=3001 playwright test"
   },
   "dependencies": {
     "@payflow/types": "0.1.0",
