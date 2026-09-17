@@ -1,8 +1,9 @@
 import type { ApiResponse } from '@payflow/types';
 
-// When unset in production, requests go to the same origin and are proxied to
-// the API by Next rewrites so the session cookie stays on the web hostname.
-const API_ORIGIN = (process.env.NEXT_PUBLIC_API_ORIGIN || '').replace(/\/+$/, '');
+// All API calls go through the web's own origin; Next rewrites proxy them to
+// the API server-side so the session cookie stays on the web hostname where
+// middleware can read it. No API origin is ever needed in the client bundle.
+const API_ORIGIN = '';
 
 export class ApiError extends Error {
   code: string;
